@@ -10,6 +10,10 @@ NC="\033[0m"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PROFILE="${1:-${PROFILE:-}}"
+WORKSPACE_DIR="${OPENCLAW_WORKSPACE_DIR:-$HOME/.openclaw/workspace}"
+GATEWAY_URL="${OPENCLAW_GATEWAY_URL:-ws://127.0.0.1:18789}"
+OLLAMA_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
+OPENWEBUI_URL="${OPENWEBUI_URL:-http://127.0.0.1:3000}"
 
 log() { echo -e "${BLUE}[deploy-llm-local]${NC} $*"; }
 ok() { echo -e "${GREEN}[ok]${NC} $*"; }
@@ -45,22 +49,46 @@ normalize_profile() {
 }
 
 ensure_workspace() {
-  mkdir -p "${REPO_DIR}/examples"
+  log "Preparando workspace do OpenClaw em ${WORKSPACE_DIR}..."
+  mkdir -p "${WORKSPACE_DIR}"
+  openclaw setup --mode local --non-interactive --workspace "${WORKSPACE_DIR}" >/dev/null 2>&1 || \
+    warn "openclaw setup retornou aviso; vou seguir validando a instalação atual."
+  ok "Workspace preparado."
+}
+
+ensure_gateway_service() {
+  log "Garantindo gateway do OpenClaw..."
+  if openclaw gateway health >/dev/null 2>&1; then
+    ok "Gateway já estava saudável."
+    return 0
+  fi
+
+  warn "Gateway não respondeu; tentando iniciar o serviço..."
+  openclaw gateway start >/dev/null 2>&1 || openclaw gateway install --force >/dev/null 2>&1 || true
+  openclaw gateway start >/dev/null 2>&1 || true
+
+  if openclaw gateway health >/dev/null 2>&1; then
+    ok "Gateway iniciado com sucesso."
+  else
+    warn "Gateway ainda não respondeu; pode precisar de ajuste manual."
+  fi
 }
 
 write_env_example() {
+  mkdir -p "${REPO_DIR}/examples"
   local target="${REPO_DIR}/examples/openclaw.env.example"
   cat > "$target" <<ENVEOF
 # Perfil escolhido para o projeto
 PROFILE=${PROFILE}
 
-# Gateway OpenClaw
-OPENCLAW_GATEWAY_URL=ws://127.0.0.1:18789
+# Workspace e gateway OpenClaw
+OPENCLAW_WORKSPACE_DIR=${WORKSPACE_DIR}
+OPENCLAW_GATEWAY_URL=${GATEWAY_URL}
 OPENCLAW_GATEWAY_TOKEN=
 
-# Modelo/backend local
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OPENWEBUI_URL=http://127.0.0.1:3000
+# Backend local
+OLLAMA_BASE_URL=${OLLAMA_URL}
+OPENWEBUI_URL=${OPENWEBUI_URL}
 
 # Canais opcionais
 TELEGRAM_BOT_TOKEN=
@@ -74,12 +102,6 @@ ENVEOF
 
 check_gateway() {
   log "Verificando gateway do OpenClaw..."
-  if openclaw gateway health >/dev/null 2>&1; then
-    ok "Gateway do OpenClaw está saudável."
-  else
-    warn "Gateway não respondeu no primeiro teste. Vou consultar status geral."
-  fi
-
   openclaw gateway status || true
 }
 
@@ -90,30 +112,42 @@ check_channels() {
 
 check_ollama() {
   log "Validando backend local de modelo..."
-  if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-    ok "Ollama respondeu em 127.0.0.1:11434"
+  if curl -fsS "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
+    ok "Ollama respondeu em ${OLLAMA_URL}"
   else
-    warn "Ollama não respondeu em 127.0.0.1:11434"
+    warn "Ollama não respondeu em ${OLLAMA_URL}"
+  fi
+}
+
+check_openwebui() {
+  log "Validando Open WebUI..."
+  if curl -fsS "${OPENWEBUI_URL}" >/dev/null 2>&1; then
+    ok "Open WebUI respondeu em ${OPENWEBUI_URL}"
+  else
+    warn "Open WebUI não respondeu em ${OPENWEBUI_URL}"
   fi
 }
 
 show_summary() {
   echo
-  ok "Setup base de OpenClaw concluído."
+  ok "Setup do OpenClaw concluído."
   echo "- Perfil: ${PROFILE}"
-  echo "- Gateway esperado: ws://127.0.0.1:18789"
+  echo "- Workspace: ${WORKSPACE_DIR}"
+  echo "- Gateway esperado: ${GATEWAY_URL}"
   echo "- Arquivo exemplo: examples/openclaw.env.example"
-  echo "- Próximo passo: implementar scripts/setup-telegram.sh e scripts/setup-slack.sh para automação completa dos canais"
+  echo "- Canais automatizáveis: Telegram e Slack"
 }
 
 main() {
   normalize_profile
   require_openclaw
   ensure_workspace
+  ensure_gateway_service
   write_env_example
   check_gateway
   check_channels
   check_ollama
+  check_openwebui
   show_summary
 }
 
