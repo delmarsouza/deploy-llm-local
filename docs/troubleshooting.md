@@ -40,9 +40,11 @@ Sintoma:
 - porta 3000 não responde
 
 Ação:
-- confira Docker/Compose
+- confirme se o host final realmente tem Docker acessível
 - confira os arquivos em `docker/env/` e `docker/compose*.yml`
 - rode `bash scripts/setup-openwebui.sh 16gb`
+- se falhar, inspecione o status e logs do compose
+- confirme se o Ollama está acessível em `127.0.0.1:11434` ou via `host.docker.internal`
 
 ## 6. OpenClaw não responde
 Sintoma:
