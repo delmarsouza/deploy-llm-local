@@ -15,6 +15,9 @@ CHANNEL="none"
 SKIP_DOCKER=0
 SKIP_NVIDIA=0
 SKIP_OLLAMA=0
+SKIP_OPENWEBUI=0
+SKIP_OPENCLAW=0
+CHANNEL_ENV_FILE=""
 
 log() { echo -e "${BLUE}[deploy-llm-local]${NC} $*"; }
 ok() { echo -e "${GREEN}[ok]${NC} $*"; }
@@ -27,17 +30,19 @@ Uso:
   scripts/deploy-llm-local.sh [opções]
 
 Opções:
-  --profile <6gb|8gb|16gb>   Força o perfil de hardware
-  --channel <telegram|slack|none>
-                             Define se tenta configurar canal
-  --skip-docker              Pula instalação do Docker
-  --skip-nvidia              Pula NVIDIA Container Toolkit
-  --skip-ollama              Pula setup do Ollama
-  -h, --help                 Mostra esta ajuda
+  --profile <6gb|8gb|16gb>        Força o perfil de hardware
+  --channel <telegram|slack|none> Define se tenta configurar canal
+  --channel-env <arquivo>         Arquivo .env do canal escolhido
+  --skip-docker                   Pula instalação do Docker
+  --skip-nvidia                   Pula NVIDIA Container Toolkit
+  --skip-ollama                   Pula setup do Ollama
+  --skip-openwebui                Pula setup do Open WebUI
+  --skip-openclaw                 Pula setup do OpenClaw
+  -h, --help                      Mostra esta ajuda
 
 Exemplos:
   scripts/deploy-llm-local.sh
-  scripts/deploy-llm-local.sh --profile 16gb --channel telegram
+  scripts/deploy-llm-local.sh --profile 16gb --channel telegram --channel-env examples/telegram.env.example
   scripts/deploy-llm-local.sh --skip-docker --skip-nvidia
 USAGE
 }
@@ -53,6 +58,10 @@ parse_args() {
         CHANNEL="${2:-}"
         shift 2
         ;;
+      --channel-env)
+        CHANNEL_ENV_FILE="${2:-}"
+        shift 2
+        ;;
       --skip-docker)
         SKIP_DOCKER=1
         shift
@@ -63,6 +72,14 @@ parse_args() {
         ;;
       --skip-ollama)
         SKIP_OLLAMA=1
+        shift
+        ;;
+      --skip-openwebui)
+        SKIP_OPENWEBUI=1
+        shift
+        ;;
+      --skip-openclaw)
+        SKIP_OPENCLAW=1
         shift
         ;;
       -h|--help)
@@ -136,32 +153,53 @@ validate_channel() {
 
 run_step() {
   local label="$1"
-  local script_path="$2"
-
+  shift
   log "Executando etapa: ${label}"
-  bash "$script_path"
+  bash "$@"
   ok "Etapa concluída: ${label}"
 }
 
-show_next_steps() {
+maybe_setup_channel() {
+  case "$CHANNEL" in
+    telegram)
+      if [[ -n "$CHANNEL_ENV_FILE" ]]; then
+        run_step "setup-telegram" "${REPO_DIR}/scripts/setup-telegram.sh" "$CHANNEL_ENV_FILE"
+      else
+        warn "Canal telegram pedido, mas --channel-env não foi informado. Pulando automação do canal."
+      fi
+      ;;
+    slack)
+      if [[ -n "$CHANNEL_ENV_FILE" ]]; then
+        run_step "setup-slack" "${REPO_DIR}/scripts/setup-slack.sh" "$CHANNEL_ENV_FILE"
+      else
+        warn "Canal slack pedido, mas --channel-env não foi informado. Pulando automação do canal."
+      fi
+      ;;
+    none)
+      ;;
+  esac
+}
+
+show_summary() {
   local env_file="docker/env/${PROFILE,,}.env"
   local compose_file="docker/compose.${PROFILE,,}.yml"
 
   echo
-  ok "Bootstrap base concluído."
-  echo ""
-  echo "Próximos arquivos do perfil:"
-  echo "- ${env_file}"
-  echo "- ${compose_file}"
-  echo ""
+  ok "Bootstrap principal concluído."
+  echo "- Perfil: ${PROFILE}"
+  echo "- Canal: ${CHANNEL}"
+  echo "- Env do perfil: ${env_file}"
+  echo "- Compose do perfil: ${compose_file}"
 
-  if [[ "$CHANNEL" == "telegram" ]]; then
-    warn "O setup automático de Telegram ainda não foi implementado no projeto."
-  elif [[ "$CHANNEL" == "slack" ]]; then
-    warn "O setup automático de Slack ainda não foi implementado no projeto."
+  if [[ -n "$CHANNEL_ENV_FILE" ]]; then
+    echo "- Env do canal: ${CHANNEL_ENV_FILE}"
   fi
 
-  warn "Open WebUI e OpenClaw ainda estão pendentes de implementação automática nesta v1.0 do repositório."
+  echo
+  echo "Próximos comandos úteis:"
+  echo "- bash scripts/setup-openwebui.sh ${PROFILE,,}"
+  echo "- bash scripts/setup-openclaw.sh ${PROFILE,,}"
+  echo "- openclaw status"
 }
 
 main() {
@@ -191,7 +229,20 @@ main() {
     warn "Pulando setup-ollama por opção do usuário."
   fi
 
-  show_next_steps
+  if [[ "$SKIP_OPENWEBUI" -eq 0 ]]; then
+    run_step "setup-openwebui" "${REPO_DIR}/scripts/setup-openwebui.sh" "${PROFILE,,}"
+  else
+    warn "Pulando setup-openwebui por opção do usuário."
+  fi
+
+  if [[ "$SKIP_OPENCLAW" -eq 0 ]]; then
+    run_step "setup-openclaw" "${REPO_DIR}/scripts/setup-openclaw.sh" "${PROFILE,,}"
+  else
+    warn "Pulando setup-openclaw por opção do usuário."
+  fi
+
+  maybe_setup_channel
+  show_summary
 }
 
 main "$@"
