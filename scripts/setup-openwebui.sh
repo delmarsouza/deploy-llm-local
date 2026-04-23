@@ -18,12 +18,13 @@ err() { echo -e "${RED}[erro]${NC} $*"; }
 
 require_docker() {
   if ! command -v docker >/dev/null 2>&1; then
-    err "Docker não encontrado. Roda scripts/install-docker.sh antes."
+    err "Docker não encontrado neste contexto de execução. Roda scripts/install-docker.sh no host alvo antes."
     exit 1
   fi
 
   if ! docker info >/dev/null 2>&1; then
-    err "Docker não está acessível para o usuário atual."
+    err "Docker está instalado, mas não está acessível para o usuário atual."
+    err "Confere permissões do grupo docker ou executa com um usuário que tenha acesso ao daemon."
     exit 1
   fi
 }
@@ -64,7 +65,7 @@ check_ollama() {
   if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
     ok "Ollama local respondeu em 127.0.0.1:11434"
   else
-    warn "Ollama não respondeu em 127.0.0.1:11434. O Open WebUI vai subir, mas sem backend funcional até isso ser resolvido."
+    warn "Ollama não respondeu em 127.0.0.1:11434. O Open WebUI pode subir sem backend funcional até isso ser resolvido."
   fi
 }
 
@@ -75,6 +76,11 @@ compose_up() {
     -f "$COMPOSE_BASE" \
     -f "$COMPOSE_PROFILE" \
     up -d
+}
+
+show_compose_status() {
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_PROFILE" ps || true
+  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_PROFILE" logs --tail=50 || true
 }
 
 validate_ui() {
@@ -92,7 +98,7 @@ validate_ui() {
   done
 
   err "Open WebUI não respondeu dentro do tempo esperado."
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_PROFILE" ps || true
+  show_compose_status
   exit 1
 }
 
