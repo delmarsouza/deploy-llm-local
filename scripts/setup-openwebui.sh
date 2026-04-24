@@ -51,6 +51,22 @@ docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 log "validando container open-webui"
 docker ps --filter name=open-webui --format '{{.Names}}' | grep -q '^open-webui$'
 
+health=''
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' open-webui 2>/dev/null || true)
+  if [ "$status" = "healthy" ] || [ "$status" = "running" ]; then
+    health=1
+    break
+  fi
+  sleep 3
+done
+
+if [ -z "$health" ]; then
+  log "Container open-webui não ficou saudável/running no tempo esperado"
+  docker logs --tail 120 open-webui || true
+  exit 1
+fi
+
 ok=''
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
   if curl -fsS http://127.0.0.1:3001/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3001 >/dev/null 2>&1; then
@@ -65,6 +81,9 @@ if [ -z "$ok" ]; then
   docker logs --tail 120 open-webui || true
   exit 1
 fi
+
+log "compose status"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
 
 log "Open WebUI respondendo em http://127.0.0.1:3001"
 log "concluído com sucesso"
