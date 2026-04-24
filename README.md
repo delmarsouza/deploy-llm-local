@@ -37,6 +37,7 @@ Entregar fluxo de instalação simples e reaproveitável para quem quer subir um
 - `scripts/setup-slack.sh`
 - `scripts/deploy-llm-local.sh`
 - `scripts/harden-openclaw.sh`
+- `scripts/healthcheck.sh`
 
 ## Fluxo recomendado
 ### Bootstrap principal
@@ -79,3 +80,9 @@ bash scripts/deploy-llm-local.sh \
 - `docs/linux-distros.md`
 - `docs/troubleshooting.md`
 - `docs/hardening.md`
+
+
+## Verificação rápida de saúde
+```bash
+bash scripts/healthcheck.sh
+```
