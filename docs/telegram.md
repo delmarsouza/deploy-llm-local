@@ -16,8 +16,8 @@ No Telegram, abra o **@BotFather** e siga este fluxo:
 4. Copie o **token** gerado pelo BotFather
 
 ### Exemplo
-- Nome: `Clawdinho The Mega Bot`
-- Username: `ClawdinhoTheMegaBot`
+- Nome: `Clawdinho`
+- Username: `ClawdinhoBot`
 
 ## Passo 2 — Preparar o arquivo de ambiente
 Use o exemplo do projeto:
@@ -30,7 +30,7 @@ Edite o arquivo e preencha:
 
 ```env
 TELEGRAM_BOT_TOKEN=SEU_TOKEN_AQUI
-TELEGRAM_ALLOW_FROM=7680747272
+TELEGRAM_ALLOW_FROM=8080848282
 AGENT_NAME=default
 ```
 
@@ -76,15 +76,7 @@ Primeiro valide o bot em conversa direta antes de levar para grupos.
 ### 2. Use allowlist
 O padrão recomendado neste projeto é manter acesso restrito via `TELEGRAM_ALLOW_FROM`.
 
-### 3. Não commite token real
-Nunca salve token real em:
-- `README.md`
-- `examples/*.env`
-- commits Git
-
-Use sempre um `.env` local fora do versionamento.
-
-### 4. Privacy mode em grupos
+### 3. Privacy mode em grupos
 Se quiser usar o bot em grupos e reduzir atrito:
 1. abra `/mybots` no BotFather
 2. selecione o bot
