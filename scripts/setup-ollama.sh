@@ -1,95 +1,73 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RED="\033[0;31m"
-GREEN="\033[0;32m"
-YELLOW="\033[1;33m"
-BLUE="\033[0;34m"
-NC="\033[0m"
-
-log() { echo -e "${BLUE}[deploy-llm-local]${NC} $*"; }
-ok() { echo -e "${GREEN}[ok]${NC} $*"; }
-warn() { echo -e "${YELLOW}[warn]${NC} $*"; }
-err() { echo -e "${RED}[erro]${NC} $*"; }
-
-require_sudo() {
-  if ! sudo -n true >/dev/null 2>&1; then
-    err "sudo sem senha é necessário para este script."
-    err "Configura sudo NOPASSWD ou executa manualmente os comandos com sudo."
-    exit 1
-  fi
+log() {
+  printf '[setup-ollama] %s\n' "$*"
 }
 
-require_linux() {
-  if [[ "$(uname -s)" != "Linux" ]]; then
-    err "Este script foi feito para Linux."
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    log "comando obrigatório ausente: $1"
     exit 1
-  fi
+  }
 }
+
+SUDO=''
+if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+  SUDO='sudo -n'
+fi
+
+require_cmd curl
+require_cmd systemctl
 
 install_ollama() {
   if command -v ollama >/dev/null 2>&1; then
-    ok "Ollama já está instalado: $(ollama --version 2>/dev/null || echo 'versão não identificada')"
-    return
+    log "ollama já instalado: $(ollama --version 2>/dev/null || true)"
+    return 0
   fi
 
-  log "Instalando Ollama..."
+  log "instalando Ollama"
   curl -fsSL https://ollama.com/install.sh | sh
-  ok "Ollama instalado."
 }
 
-enable_service() {
+ensure_service() {
   if systemctl list-unit-files | grep -q '^ollama.service'; then
-    log "Habilitando e iniciando serviço do Ollama..."
-    sudo -n systemctl enable --now ollama
-    ok "Serviço ollama habilitado e iniciado."
+    log "habilitando e iniciando ollama.service"
+    $SUDO systemctl enable --now ollama.service
+  elif systemctl --user list-unit-files | grep -q '^ollama.service'; then
+    log "habilitando e iniciando ollama.service no user systemd"
+    systemctl --user enable --now ollama.service
   else
-    warn "Serviço ollama.service não encontrado. Vou seguir com validação por binário."
-  fi
-}
-
-wait_for_ollama() {
-  local max_attempts=20
-  local attempt=1
-
-  while (( attempt <= max_attempts )); do
-    if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-      ok "API do Ollama respondeu em http://127.0.0.1:11434"
-      return 0
+    log "serviço systemd do Ollama não encontrado; tentando subir em background"
+    if ! pgrep -x ollama >/dev/null 2>&1; then
+      nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
+      sleep 3
     fi
-    sleep 1
-    ((attempt++))
-  done
-
-  return 1
+  fi
 }
 
 validate_install() {
-  log "Validando instalação do Ollama..."
-  ollama --version
+  require_cmd ollama
+  log "versão: $(ollama --version)"
 
-  if systemctl list-unit-files | grep -q '^ollama.service'; then
-    sudo -n systemctl --no-pager --full status ollama | sed -n '1,20p' || true
-  fi
+  local ok=''
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+      ok=1
+      break
+    fi
+    sleep 2
+  done
 
-  if wait_for_ollama; then
-    curl -fsS http://127.0.0.1:11434/api/tags
-    ok "Ollama está operacional."
-  else
-    err "O serviço/API do Ollama não respondeu dentro do tempo esperado."
-    err "Confere com: sudo systemctl status ollama"
+  if [ -z "$ok" ]; then
+    log "API do Ollama não respondeu em http://127.0.0.1:11434"
     exit 1
   fi
+
+  log "API do Ollama respondendo em 127.0.0.1:11434"
 }
 
-main() {
-  log "Iniciando setup do Ollama..."
-  require_linux
-  require_sudo
-  install_ollama
-  enable_service
-  validate_install
-  ok "Etapa setup-ollama concluída."
-}
-
-main "$@"
+install_ollama
+ensure_service
+validate_install
+log "concluído com sucesso"
