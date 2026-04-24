@@ -27,3 +27,11 @@ openclaw status
 openclaw security audit
 openclaw security audit --deep
 ```
+
+## 7. denyCommands válidos
+Evite nomes inventados em `gateway.nodes.denyCommands`. Use apenas command IDs reais reconhecidos pelo OpenClaw.
+
+Exemplo seguro:
+```bash
+openclaw config set gateway.nodes.denyCommands '["canvas.present","canvas.hide","canvas.navigate","canvas.eval","canvas.snapshot","canvas.a2ui.push","canvas.a2ui.pushJSONL","canvas.a2ui.reset"]' --strict-json
+```

@@ -25,6 +25,12 @@ apply_safe_defaults() {
   ok "gateway.bind ajustado para loopback (quando aplicável)."
 }
 
+clean_ineffective_deny_commands() {
+  log "Limpando denyCommands inefetivos conhecidos..."
+  openclaw config set gateway.nodes.denyCommands '["canvas.present","canvas.hide","canvas.navigate","canvas.eval","canvas.snapshot","canvas.a2ui.push","canvas.a2ui.pushJSONL","canvas.a2ui.reset"]' --strict-json || \
+    warn "Não consegui ajustar gateway.nodes.denyCommands automaticamente."
+}
+
 report_security() {
   log "Rodando auditoria de segurança do OpenClaw..."
   openclaw security audit || true
@@ -34,6 +40,7 @@ show_summary() {
   echo
   ok "Passo de hardening concluído."
   echo "- Gateway preferencialmente local-only"
+  echo "- denyCommands alinhado com nomes válidos conhecidos"
   echo "- Próximo passo manual recomendado: revisar docs/hardening.md"
   echo "- Auditoria: openclaw security audit --deep"
 }
@@ -41,6 +48,7 @@ show_summary() {
 main() {
   require_openclaw
   apply_safe_defaults
+  clean_ineffective_deny_commands
   report_security
   show_summary
 }
