@@ -56,6 +56,15 @@ bash scripts/deploy-llm-local.sh \
   --channel-env examples/telegram.env.example
 ```
 
+### Configuração manual do Telegram após bootstrap
+```bash
+cp examples/telegram.env.example /tmp/telegram.env
+# preencha o token do BotFather e a allowlist
+bash scripts/setup-telegram.sh /tmp/telegram.env
+```
+
+Consulte `docs/telegram.md` para o fluxo completo do BotFather, criação do bot, token e validação final.
+
 ### Bootstrap com Slack
 ```bash
 bash scripts/deploy-llm-local.sh \
@@ -68,6 +77,7 @@ bash scripts/deploy-llm-local.sh \
 - `docker/env/*.env` → parâmetros por perfil
 - `docker/compose*.yml` → stack do Open WebUI por perfil
 - `examples/telegram.env.example` → exemplo de canal Telegram
+- `docs/telegram.md` → passo a passo do BotFather, token, allowlist e validação do Telegram
 - `examples/slack.env.example` → exemplo de canal Slack
 - `examples/openclaw.env.example` → exemplo de integração local
 
@@ -83,6 +93,7 @@ bash scripts/deploy-llm-local.sh \
 - `docs/linux-distros.md`
 - `docs/troubleshooting.md`
 - `docs/hardening.md`
+- `docs/telegram.md`
 
 
 ## Verificação rápida de saúde
