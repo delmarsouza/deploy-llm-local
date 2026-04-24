@@ -2,7 +2,7 @@
 
 Bootstrap prático para subir uma stack local de IA com GPU NVIDIA, interface web e agente conversacional em Linux.
 
-A proposta do projeto é reduzir atrito de instalação e deixar reproduzível um ambiente funcional com:
+A proposta do projeto é reduzir atrito de instalação e deixar um ambiente pronto e funcional com:
 - **Ollama** para inferência local
 - **Open WebUI** para interface web
 - **OpenClaw** para agente, automação e canais
@@ -12,7 +12,7 @@ A proposta do projeto é reduzir atrito de instalação e deixar reproduzível u
 
 ## O que este projeto resolve
 
-Subir um ambiente local de LLM com GPU costuma virar uma mistura de:
+Subir um ambiente local de LLM com GPU, o que costuma trazer uma série de dificuldades como:
 - Docker mal configurado
 - NVIDIA Container Toolkit inconsistente
 - Ollama instalado de um jeito, UI de outro
