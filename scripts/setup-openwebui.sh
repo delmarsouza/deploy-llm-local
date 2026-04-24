@@ -29,6 +29,18 @@ require_docker() {
   fi
 }
 
+container_running() {
+  local cid
+  cid="$(docker ps --filter name=^openwebui$ --format '{{.ID}}' | head -n1)"
+  [[ -n "$cid" ]]
+}
+
+port_in_use() {
+  local port
+  port="$1"
+  ss -ltn 2>/dev/null | awk '{print $4}' | grep -q ":${port}$"
+}
+
 normalize_profile() {
   case "${PROFILE,,}" in
     6gb|6)

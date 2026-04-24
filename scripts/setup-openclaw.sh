@@ -67,11 +67,15 @@ ensure_gateway_service() {
   openclaw gateway start >/dev/null 2>&1 || openclaw gateway install --force >/dev/null 2>&1 || true
   openclaw gateway start >/dev/null 2>&1 || true
 
-  if openclaw gateway health >/dev/null 2>&1; then
-    ok "Gateway iniciado com sucesso."
-  else
-    warn "Gateway ainda não respondeu; pode precisar de ajuste manual."
-  fi
+  for _ in $(seq 1 10); do
+    if openclaw gateway health >/dev/null 2>&1; then
+      ok "Gateway iniciado com sucesso."
+      return 0
+    fi
+    sleep 2
+  done
+
+  warn "Gateway ainda não respondeu; pode precisar de ajuste manual."
 }
 
 write_env_example() {
@@ -103,6 +107,11 @@ ENVEOF
 check_gateway() {
   log "Verificando gateway do OpenClaw..."
   openclaw gateway status || true
+  if openclaw gateway health >/dev/null 2>&1; then
+    ok "Gateway respondeu ao health check final."
+  else
+    warn "Gateway segue instável no health check final."
+  fi
 }
 
 check_channels() {
