@@ -59,10 +59,12 @@ else:
     cfg={}
 
 cfg.setdefault('gateway', {})
-cfg['gateway'].setdefault('mode', 'local')
+cfg['gateway']['mode'] = 'local'
 cfg['gateway'].setdefault('auth', {})
 cfg['gateway']['auth'].setdefault('mode', 'token')
 cfg['gateway']['auth'].setdefault('token', secrets.token_hex(24))
+cfg['gateway'].setdefault('bind', 'loopback')
+cfg['gateway'].setdefault('port', 18789)
 
 cfg.setdefault('agents', {}).setdefault('defaults', {})
 cfg['agents']['defaults'].setdefault('workspace', workspace)
@@ -84,17 +86,32 @@ print(open(p).read())
 PY
 }
 
-ensure_gateway_best_effort() {
-  if systemctl --user list-unit-files | grep -q '^openclaw-gateway.service'; then
-    log "reiniciando serviço user do gateway"
-    systemctl --user restart openclaw-gateway.service || true
-  else
-    log "tentando iniciar gateway via CLI"
-    openclaw gateway restart || openclaw gateway start || true
+ensure_gateway_ready() {
+  log "instalando/habilitando serviço do gateway"
+  openclaw gateway install
+  systemctl --user daemon-reload || true
+  openclaw gateway restart || openclaw gateway start
+
+  log "aguardando gateway ficar acessível"
+  ready=''
+  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    if openclaw gateway health >/dev/null 2>&1; then
+      if openclaw gateway probe 2>/dev/null | grep -q 'Reachable: yes'; then
+        ready=1
+        break
+      fi
+    fi
+    sleep 3
+  done
+
+  if [ -z "$ready" ]; then
+    log "gateway não ficou pronto no tempo esperado"
+    openclaw gateway status || true
+    journalctl --user -u openclaw-gateway.service -n 120 --no-pager || true
+    exit 1
   fi
 
-  sleep 5
-  openclaw gateway status || true
+  openclaw gateway status
 }
 
 project_validation() {
@@ -103,13 +120,17 @@ project_validation() {
   require_cmd ollama
   ollama --version
   curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+  openclaw gateway health >/dev/null
+  openclaw gateway probe | grep -q 'Reachable: yes'
   python3 - <<PY
-import json, os, sys
+import json, os
 p=os.path.expanduser('$CONFIG_FILE')
 with open(p) as f:
     cfg=json.load(f)
 assert cfg.get('gateway', {}).get('mode') == 'local'
 assert cfg.get('gateway', {}).get('auth', {}).get('token')
+assert cfg.get('gateway', {}).get('bind') == 'loopback'
+assert cfg.get('gateway', {}).get('port') == 18789
 assert cfg.get('agents', {}).get('defaults', {}).get('workspace')
 ollama = cfg.get('models', {}).get('providers', {}).get('ollama', {})
 assert ollama.get('baseUrl') == 'http://127.0.0.1:11434'
@@ -120,6 +141,6 @@ PY
 install_node_if_missing
 install_openclaw_if_missing
 write_project_safe_config
-ensure_gateway_best_effort
+ensure_gateway_ready
 project_validation
 log "concluído com sucesso"
