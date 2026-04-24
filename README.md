@@ -135,6 +135,15 @@ bash scripts/deploy-llm-local.sh \
   --channel-env examples/slack.env.example
 ```
 
+### Configuração manual do Slack após bootstrap
+```bash
+cp examples/slack.env.example /tmp/slack.env
+# preencha o bot token, app token e o canal padrão
+bash scripts/setup-slack.sh /tmp/slack.env
+```
+
+Consulte `docs/slack.md` para o fluxo completo de criação do app, socket mode, tokens e validação final.
+
 ---
 
 ## Arquivos importantes
@@ -144,6 +153,7 @@ bash scripts/deploy-llm-local.sh \
 - `examples/telegram.env.example` → exemplo de canal Telegram
 - `docs/telegram.md` → passo a passo do BotFather, token, allowlist e validação do Telegram
 - `examples/slack.env.example` → exemplo de canal Slack
+- `docs/slack.md` → passo a passo de criação do app, tokens, socket mode e validação do Slack
 - `examples/openclaw.env.example` → exemplo de integração local
 
 ---
@@ -165,6 +175,7 @@ bash scripts/healthcheck.sh
 - `docs/troubleshooting.md`
 - `docs/hardening.md`
 - `docs/telegram.md`
+- `docs/slack.md`
 
 ---
 
