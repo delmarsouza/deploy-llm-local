@@ -25,7 +25,7 @@ check_cmd() {
   fi
 }
 
-check_http() {
+check_http_required() {
   local url="$1"
   local label="$2"
   if curl -fsS "$url" >/dev/null 2>&1; then
@@ -35,7 +35,7 @@ check_http() {
   fi
 }
 
-check_http_warn() {
+check_http_optional() {
   local url="$1"
   local label="$2"
   if curl -fsS "$url" >/dev/null 2>&1; then
@@ -77,11 +77,11 @@ fi
 section "Ollama"
 if command -v ollama >/dev/null 2>&1; then
   ollama --version || true
-  check_http "http://127.0.0.1:11434/api/tags" "Ollama API"
+  check_http_required "http://127.0.0.1:11434/api/tags" "Ollama API"
 fi
 
 section "Open WebUI"
-check_http_warn "http://127.0.0.1:3000" "Open WebUI"
+check_http_optional "http://127.0.0.1:3001" "Open WebUI"
 
 section "OpenClaw"
 if command -v openclaw >/dev/null 2>&1; then
@@ -91,14 +91,23 @@ if command -v openclaw >/dev/null 2>&1; then
     fail "Gateway OpenClaw não respondeu ao health check"
   fi
 
+  if openclaw gateway probe 2>/dev/null | grep -q 'Reachable: yes'; then
+    ok "Gateway OpenClaw acessível via probe"
+  else
+    fail "Gateway OpenClaw sem resposta válida no probe"
+  fi
+
   if openclaw status >/dev/null 2>&1; then
     ok "OpenClaw status executou com sucesso"
   else
     fail "OpenClaw status falhou"
   fi
 
-  echo
-  openclaw security audit || true
+  if openclaw channels status --probe 2>/dev/null | grep -q 'Telegram default: .*works'; then
+    ok "Telegram ativo e funcional"
+  else
+    warn "Telegram não apareceu como funcional no probe"
+  fi
 fi
 
 section "Resumo"
