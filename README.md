@@ -1,25 +1,40 @@
 # Deploy LLM Local
 
-Bootstrap prático para subir uma stack local de IA com GPU NVIDIA, interface web e agente conversacional em Linux.
+Stack local de IA para Linux com GPU NVIDIA, interface web e agente conversacional, pensada para reduzir atrito de instalação e acelerar ambientes demonstráveis em host real.
 
-A proposta do projeto é reduzir atrito de instalação e deixar um ambiente pronto e funcional com:
+O projeto organiza um bootstrap prático para deixar um ambiente funcional com:
 - **Ollama** para inferência local
 - **Open WebUI** para interface web
 - **OpenClaw** para agente, automação e canais
 - **Telegram ou Slack** como camada opcional de conversa
 
----
+## Proposta de valor
+
+O **Deploy LLM Local** serve para quem quer sair rápido do cenário de setup manual e montar uma stack local utilizável para:
+- laboratório de IA com GPU NVIDIA
+- POCs privadas para clientes ou uso interno
+- demonstrações com interface web + agente + canal de conversa
+- padronização de bootstrap em workstations e servidores Linux
 
 ## O que este projeto resolve
 
-Subir um ambiente local de LLM com GPU, o que costuma trazer uma série de dificuldades como:
+Subir um ambiente local de LLM com GPU costuma virar uma mistura de:
 - Docker mal configurado
 - NVIDIA Container Toolkit inconsistente
 - Ollama instalado de um jeito, UI de outro
 - OpenClaw sem gateway funcional
 - canais de chat quebrando na hora final
 
-Este repositório organiza isso em um fluxo único, com scripts separados por etapa e um bootstrap principal para acelerar a implantação.
+Este repositório organiza isso em um fluxo único, com scripts separados por etapa, documentação de apoio, troubleshooting operacional e um bootstrap principal para acelerar a implantação.
+
+## Diferencial desta versão
+
+Este repositório não é só um boilerplate. A base atual já foi validada em host real com:
+- Open WebUI funcional
+- OpenClaw funcional
+- Telegram ativo
+- troubleshooting documentado
+- healthcheck alinhado com a validação prática
 
 ---
 
