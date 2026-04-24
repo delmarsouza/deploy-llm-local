@@ -27,6 +27,7 @@ install_docker_ubuntu() {
 
   log "Configurando keyring oficial do Docker..."
   sudo -n install -m 0755 -d /etc/apt/keyrings
+  sudo -n rm -f /etc/apt/keyrings/docker.gpg
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo -n gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   sudo -n chmod a+r /etc/apt/keyrings/docker.gpg
 
