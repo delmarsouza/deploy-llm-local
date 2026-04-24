@@ -55,6 +55,7 @@ main() {
   require_script install-docker.sh
   require_script install-nvidia-toolkit.sh
   require_script setup-ollama.sh
+  require_script setup-openwebui.sh
 
   local profile
   profile="$(select_profile)"
@@ -64,9 +65,10 @@ main() {
   run_step 'instalação/validação do Docker' 'install-docker.sh'
   run_step 'instalação/validação do NVIDIA Container Toolkit' 'install-nvidia-toolkit.sh'
   run_step 'instalação/validação do Ollama' 'setup-ollama.sh'
+  run_step 'instalação/validação do Open WebUI' 'setup-openwebui.sh'
 
-  log "bootstrap base concluído com sucesso para o perfil $profile"
-  log "próximos passos: setup-openwebui.sh e integração OpenClaw/Telegram/Slack"
+  log "bootstrap base + interface concluídos com sucesso para o perfil $profile"
+  log "próximos passos: setup-openclaw.sh e integração Telegram/Slack"
 }
 
 main "$@"
