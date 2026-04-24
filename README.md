@@ -1,5 +1,8 @@
 # Deploy LLM Local
 
+## Prerequisites
+- See [docs/prerequisites.md](docs/prerequisites.md) for host requirements, runtime dependencies and hardware profiles.
+
 Bootstrap prático para subir um ambiente local de IA com GPU NVIDIA, Ollama, Open WebUI e OpenClaw, com opção de canal Telegram ou Slack.
 
 ## Objetivo
