@@ -6,6 +6,13 @@ Bootstrap prático para subir um ambiente local de IA com GPU NVIDIA, Ollama, Op
 Entregar fluxo de instalação simples e reaproveitável para quem quer subir uma stack local de inferência com interface web e agente conversacional.
 
 ## Stack da v1
+
+## Status atual
+- **v1.0.1 homologada em ambiente real assistido**
+- Bootstrap funcional para Pop!_OS/Ubuntu com GPU NVIDIA
+- Fluxo validado com Docker, NVIDIA, Ollama, Open WebUI e OpenClaw
+- Hardening inicial do OpenClaw aplicado
+
 - Docker
 - Docker Compose
 - NVIDIA Container Toolkit
