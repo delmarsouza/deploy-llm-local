@@ -1,141 +1,70 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RED="\033[0;31m"
-GREEN="\033[0;32m"
-YELLOW="\033[1;33m"
-BLUE="\033[0;34m"
-NC="\033[0m"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="$ROOT_DIR/docker/compose.base.yml"
+ENV_FILE="$ROOT_DIR/docker/env/openwebui.env"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROFILE="${1:-${PROFILE:-}}"
+log() {
+  printf '[setup-openwebui] %s\n' "$*"
+}
 
-log() { echo -e "${BLUE}[deploy-llm-local]${NC} $*"; }
-ok() { echo -e "${GREEN}[ok]${NC} $*"; }
-warn() { echo -e "${YELLOW}[warn]${NC} $*"; }
-err() { echo -e "${RED}[erro]${NC} $*"; }
-
-require_docker() {
-  if ! command -v docker >/dev/null 2>&1; then
-    err "Docker não encontrado neste contexto de execução. Roda scripts/install-docker.sh no host alvo antes."
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    log "comando obrigatório ausente: $1"
     exit 1
+  }
+}
+
+require_cmd docker
+require_cmd curl
+
+mkdir -p "$ROOT_DIR/docker" "$ROOT_DIR/docker/env"
+
+cat > "$ENV_FILE" <<ENVEOF
+OPEN_WEBUI_PORT=3001
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+ENVEOF
+
+cat > "$COMPOSE_FILE" <<'YMLEOF'
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "${OPEN_WEBUI_PORT:-3001}:8080"
+    environment:
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui-data:/app/backend/data
+
+volumes:
+  open-webui-data:
+YMLEOF
+
+log "subindo Open WebUI via docker compose"
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
+
+log "validando container open-webui"
+docker ps --filter name=open-webui --format '{{.Names}}' | grep -q '^open-webui$'
+
+ok=''
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  if curl -fsS http://127.0.0.1:3001/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3001 >/dev/null 2>&1; then
+    ok=1
+    break
   fi
+  sleep 3
+done
 
-  if ! docker info >/dev/null 2>&1; then
-    err "Docker está instalado, mas não está acessível para o usuário atual."
-    err "Confere permissões do grupo docker ou executa com um usuário que tenha acesso ao daemon."
-    exit 1
-  fi
-}
-
-container_running() {
-  local cid
-  cid="$(docker ps --filter name=^openwebui$ --format '{{.ID}}' | head -n1)"
-  [[ -n "$cid" ]]
-}
-
-port_in_use() {
-  local port
-  port="$1"
-  ss -ltn 2>/dev/null | awk '{print $4}' | grep -q ":${port}$"
-}
-
-normalize_profile() {
-  case "${PROFILE,,}" in
-    6gb|6)
-      PROFILE="6GB"
-      ;;
-    8gb|8)
-      PROFILE="8GB"
-      ;;
-    16gb|16)
-      PROFILE="16GB"
-      ;;
-    "")
-      err "Perfil não informado. Usa: scripts/setup-openwebui.sh 6gb|8gb|16gb"
-      exit 1
-      ;;
-    *)
-      err "Perfil inválido: ${PROFILE}. Usa 6gb, 8gb ou 16gb."
-      exit 1
-      ;;
-  esac
-}
-
-resolve_files() {
-  ENV_FILE="${REPO_DIR}/docker/env/${PROFILE,,}.env"
-  COMPOSE_BASE="${REPO_DIR}/docker/compose.base.yml"
-  COMPOSE_PROFILE="${REPO_DIR}/docker/compose.${PROFILE,,}.yml"
-
-  [[ -f "$ENV_FILE" ]] || { err "Env file não encontrado: $ENV_FILE"; exit 1; }
-  [[ -f "$COMPOSE_BASE" ]] || { err "Compose base não encontrado: $COMPOSE_BASE"; exit 1; }
-  [[ -f "$COMPOSE_PROFILE" ]] || { err "Compose do perfil não encontrado: $COMPOSE_PROFILE"; exit 1; }
-}
-
-check_ollama() {
-  if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-    ok "Ollama local respondeu em 127.0.0.1:11434"
-  else
-    warn "Ollama não respondeu em 127.0.0.1:11434. O Open WebUI pode subir sem backend funcional até isso ser resolvido."
-  fi
-}
-
-compose_up() {
-  log "Subindo Open WebUI para o perfil ${PROFILE}..."
-  docker compose \
-    --env-file "$ENV_FILE" \
-    -f "$COMPOSE_BASE" \
-    -f "$COMPOSE_PROFILE" \
-    up -d
-}
-
-show_compose_status() {
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_PROFILE" ps || true
-  docker compose --env-file "$ENV_FILE" -f "$COMPOSE_BASE" -f "$COMPOSE_PROFILE" logs --tail=50 || true
-}
-
-validate_ui() {
-  local port
-  port="$(grep '^OPENWEBUI_PORT=' "$ENV_FILE" | cut -d= -f2)"
-  port="${port:-3000}"
-
-  log "Validando Open WebUI em http://127.0.0.1:${port} ..."
-  for _ in $(seq 1 30); do
-    if curl -fsS "http://127.0.0.1:${port}" >/dev/null 2>&1; then
-      ok "Open WebUI respondeu em http://127.0.0.1:${port}"
-      return 0
-    fi
-    sleep 2
-  done
-
-  err "Open WebUI não respondeu dentro do tempo esperado."
-  show_compose_status
+if [ -z "$ok" ]; then
+  log "Open WebUI não respondeu em http://127.0.0.1:3001 após aguardar o boot inicial"
+  docker logs --tail 120 open-webui || true
   exit 1
-}
+fi
 
-show_summary() {
-  local port
-  port="$(grep '^OPENWEBUI_PORT=' "$ENV_FILE" | cut -d= -f2)"
-  port="${port:-3000}"
-
-  echo
-  ok "Open WebUI configurado com sucesso."
-  echo "- Perfil: ${PROFILE}"
-  echo "- URL local: http://127.0.0.1:${port}"
-  echo "- Env file: ${ENV_FILE}"
-  echo "- Compose base: ${COMPOSE_BASE}"
-  echo "- Compose perfil: ${COMPOSE_PROFILE}"
-}
-
-main() {
-  normalize_profile
-  require_docker
-  resolve_files
-  check_ollama
-  compose_up
-  validate_ui
-  show_summary
-}
-
-main "$@"
+log "Open WebUI respondendo em http://127.0.0.1:3001"
+log "concluído com sucesso"
