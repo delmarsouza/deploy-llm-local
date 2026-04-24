@@ -29,6 +29,7 @@ Entregar fluxo de instalação simples e reaproveitável para quem quer subir um
 - `scripts/setup-telegram.sh`
 - `scripts/setup-slack.sh`
 - `scripts/deploy-llm-local.sh`
+- `scripts/harden-openclaw.sh`
 
 ## Fluxo recomendado
 ### Bootstrap principal
@@ -70,3 +71,4 @@ bash scripts/deploy-llm-local.sh \
 - `docs/supported-models.md`
 - `docs/linux-distros.md`
 - `docs/troubleshooting.md`
+- `docs/hardening.md`
