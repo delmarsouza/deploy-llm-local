@@ -3,7 +3,7 @@
 Bootstrap prático para subir um ambiente local de IA com GPU NVIDIA, Ollama, Open WebUI e OpenClaw, com opção de canal Telegram ou Slack.
 
 ## Objetivo
-Entregar um fluxo de instalação simples e reaproveitável para quem quer subir uma stack local de inferência com interface web e agente conversacional.
+Entregar fluxo de instalação simples e reaproveitável para quem quer subir uma stack local de inferência com interface web e agente conversacional.
 
 ## Stack da v1
 - Docker
@@ -59,10 +59,10 @@ bash scripts/deploy-llm-local.sh \
 - `examples/slack.env.example` → exemplo de canal Slack
 - `examples/openclaw.env.example` → exemplo de integração local
 
-## Observações honestas
+## Observações
 - O projeto está funcional como base de bootstrap.
 - Parte das validações depende do host final ter Docker, NVIDIA e OpenClaw disponíveis.
-- Os scripts de canal dependem de credenciais reais no `.env` correspondente.
+- Os scripts de canal dependem de credenciais `.env` correspondente.
 
 ## Documentação complementar
 - `docs/overview.md`
