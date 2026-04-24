@@ -35,6 +35,56 @@ Este repositório organiza isso em um fluxo único, com scripts separados por et
 
 ---
 
+## v1.0 validada
+
+A v1.0 do **Deploy LLM Local** foi validada em host real com foco em implantação prática de uma stack local de IA com GPU NVIDIA, interface web e agente conversacional.
+
+### O que entra na v1.0
+- Docker
+- NVIDIA Container Toolkit
+- Ollama
+- Open WebUI
+- OpenClaw
+- canal Telegram validado em ambiente real
+- suporte prático para:
+  - Ubuntu 24.04 LTS
+  - Pop!_OS 24.04
+- perfis de hardware:
+  - 6 GB VRAM
+  - 8 GB VRAM
+  - 16 GB VRAM
+
+### O que foi validado na prática
+- bootstrap base funcional
+- instalação limpa e idempotente do Docker
+- instalação limpa do NVIDIA Container Toolkit
+- Ollama respondendo localmente
+- Open WebUI subindo e ficando healthy
+- OpenClaw com gateway funcional
+- Telegram ativo e operacional
+
+### O que não entra ainda como homologado
+- Slack validado ponta a ponta em ambiente real
+- suporte oficial a outros canais além de Telegram
+- suporte oficial a hosts sem NVIDIA
+- suporte amplo a distribuições fora do alvo principal
+- hardening completo do runtime de plugins/canais do OpenClaw
+
+### Limitações conhecidas nesta versão
+- o primeiro bootstrap pode baixar imagens e dependências pesadas
+- o tempo de instalação varia bastante conforme rede, disco e GPU
+- Slack já tem script e documentação, mas ainda não está homologado como canal validado de ponta a ponta nesta v1
+- canais do OpenClaw ainda merecem hardening adicional em cenários de reinstalação/rebuild de runtime
+
+### Próximos passos
+- homologar Slack em ambiente real
+- reforçar o healthcheck da stack
+- endurecer o runtime de plugins/canais do OpenClaw
+- ampliar troubleshooting operacional
+- consolidar a apresentação comercial/técnica do projeto
+
+---
+
 ## Status atual
 
 ### Validado em ambiente real
