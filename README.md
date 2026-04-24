@@ -56,7 +56,7 @@ A v1.0 do **Deploy LLM Local** foi validada em host real com foco em implantaç�
 
 ### O que foi validado na prática
 - bootstrap base funcional
-- instalação limpa e idempotente do Docker
+- instalação limpa e consistente do Docker
 - instalação limpa do NVIDIA Container Toolkit
 - Ollama respondendo localmente
 - Open WebUI subindo e ficando healthy
@@ -79,7 +79,7 @@ A v1.0 do **Deploy LLM Local** foi validada em host real com foco em implantaç�
 ### Próximos passos
 - homologar Slack em ambiente real
 - reforçar o healthcheck da stack
-- endurecer o runtime de plugins/canais do OpenClaw
+- fortalecimento do runtime de plugins/canais do OpenClaw
 - ampliar troubleshooting operacional
 - consolidar a apresentação comercial/técnica do projeto
 
@@ -100,10 +100,10 @@ A v1.0 do **Deploy LLM Local** foi validada em host real com foco em implantaç�
   - Telegram
 
 ### O que já foi provado na prática
-- instalação limpa do Docker com ajuste de idempotência
+- instalação limpa do Docker com ajuste de consistência
 - instalação limpa do NVIDIA Container Toolkit
 - Ollama funcional e respondendo localmente
-- Open WebUI subindo e ficando healthy
+- Open WebUI subindo e ficando operacional
 - OpenClaw com gateway funcional
 - Telegram ativo com validação real do canal
 
@@ -133,7 +133,7 @@ Este projeto é útil para quem quer:
 Consulte:
 - `docs/prerequisites.md`
 
-Lá estão os requisitos de host, dependências de runtime e notas de hardware.
+Lá estão os requisitos de host, dependências de tempo de execução e notas de hardware.
 
 ---
 
