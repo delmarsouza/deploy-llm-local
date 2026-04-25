@@ -3,9 +3,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS_DIR="$ROOT_DIR/scripts"
+TOTAL_STEPS=5
+CURRENT_STEP=0
+SELECTED_PROFILE=""
 
 log() {
   printf '[deploy-llm-local] %s\n' "$*"
+}
+
+step_log() {
+  printf '[deploy-llm-local] [%s/%s] %s\n' "$1" "$TOTAL_STEPS" "$2"
 }
 
 require_script() {
@@ -19,13 +26,58 @@ require_script() {
 run_step() {
   local label="$1"
   local script="$2"
-  log "executando etapa: $label"
+  CURRENT_STEP=$((CURRENT_STEP+1))
+  step_log "$CURRENT_STEP" "$label"
+
+  case "$script" in
+    setup-ollama.sh)
+      log "esta etapa pode levar alguns minutos, dependendo de downloads e do estado do host"
+      ;;
+    setup-openwebui.sh)
+      log "o Open WebUI pode baixar imagem Docker grande na primeira execução; aguarde se o terminal parecer parado"
+      ;;
+  esac
+
   "$SCRIPTS_DIR/$script"
+  log "etapa concluída: $label"
+}
+
+usage() {
+  cat <<EOF
+Uso:
+  bash scripts/deploy-llm-local.sh [--profile 16gb|8gb|6gb]
+
+Também aceita:
+  DEPLOY_LLM_PROFILE=16gb bash scripts/deploy-llm-local.sh
+EOF
+}
+
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --profile)
+        [ "$#" -ge 2 ] || { log "faltou valor para --profile"; exit 1; }
+        SELECTED_PROFILE="$2"
+        shift 2
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        log "argumento não reconhecido: $1"
+        usage
+        exit 1
+        ;;
+    esac
+  done
 }
 
 select_profile() {
   local profile=""
-  if [ -n "${DEPLOY_LLM_PROFILE:-}" ]; then
+  if [ -n "$SELECTED_PROFILE" ]; then
+    profile="$SELECTED_PROFILE"
+  elif [ -n "${DEPLOY_LLM_PROFILE:-}" ]; then
     profile="$DEPLOY_LLM_PROFILE"
   else
     printf '\nSelecione o perfil de hardware:\n'
@@ -51,6 +103,8 @@ select_profile() {
 }
 
 main() {
+  parse_args "$@"
+
   require_script check-system.sh
   require_script install-docker.sh
   require_script install-nvidia-toolkit.sh
@@ -59,7 +113,10 @@ main() {
 
   local profile
   profile="$(select_profile)"
+  export DEPLOY_LLM_PROFILE="$profile"
+
   log "perfil selecionado: $profile"
+  log "bootstrap iniciado; etapas totais: $TOTAL_STEPS"
 
   run_step 'checagem do sistema' 'check-system.sh'
   run_step 'instalação/validação do Docker' 'install-docker.sh'
@@ -68,7 +125,7 @@ main() {
   run_step 'instalação/validação do Open WebUI' 'setup-openwebui.sh'
 
   log "bootstrap base + interface concluídos com sucesso para o perfil $profile"
-  log "próximos passos: setup-openclaw.sh e integração Telegram/Slack"
+  log "próximos passos recomendados: setup-openclaw.sh, healthcheck.sh e integração Telegram"
 }
 
 main "$@"
