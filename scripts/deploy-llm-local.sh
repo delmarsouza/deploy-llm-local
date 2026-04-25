@@ -23,6 +23,15 @@ require_script() {
   fi
 }
 
+show_troubleshooting_hint() {
+  cat <<'EOF'
+[deploy-llm-local] se parecer parado por muito tempo, abra outro terminal e rode:
+[deploy-llm-local]   docker ps
+[deploy-llm-local]   openclaw gateway status || true
+[deploy-llm-local]   bash scripts/healthcheck.sh || true
+EOF
+}
+
 run_step() {
   local label="$1"
   local script="$2"
@@ -35,6 +44,7 @@ run_step() {
       ;;
     setup-openwebui.sh)
       log "o Open WebUI pode baixar imagem Docker grande na primeira execução; aguarde se o terminal parecer parado"
+      show_troubleshooting_hint
       ;;
   esac
 
@@ -125,7 +135,11 @@ main() {
   run_step 'instalação/validação do Open WebUI' 'setup-openwebui.sh'
 
   log "bootstrap base + interface concluídos com sucesso para o perfil $profile"
-  log "próximos passos recomendados: setup-openclaw.sh, healthcheck.sh e integração Telegram"
+  log "próximos passos recomendados:"
+  log "  1) bash scripts/setup-openclaw.sh"
+  log "  2) bash scripts/healthcheck.sh || true"
+  log "  3) abrir http://127.0.0.1:3001 no navegador"
+  log "  4) opcional: integração Telegram"
 }
 
 main "$@"
