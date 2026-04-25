@@ -5,9 +5,15 @@ CONFIG_DIR="$HOME/.openclaw"
 CONFIG_FILE="$CONFIG_DIR/openclaw.json"
 WORKSPACE_DIR="$CONFIG_DIR/workspace"
 LOG_DIR="$CONFIG_DIR/logs"
+TOTAL_STEPS=5
+CURRENT_STEP=0
 
 log() {
   printf '[setup-openclaw] %s\n' "$*"
+}
+
+step_log() {
+  printf '[setup-openclaw] [%s/%s] %s\n' "$1" "$TOTAL_STEPS" "$2"
 }
 
 require_cmd() {
@@ -92,15 +98,17 @@ ensure_gateway_ready() {
   systemctl --user daemon-reload || true
   openclaw gateway restart || openclaw gateway start
 
-  log "aguardando gateway ficar acessível"
+  log "aguardando gateway ficar acessível; esta etapa pode levar alguns segundos enquanto o serviço aquece"
   ready=''
-  for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
     if openclaw gateway health >/dev/null 2>&1; then
       if openclaw gateway probe 2>/dev/null | grep -q 'Reachable: yes'; then
         ready=1
+        log "gateway respondeu na tentativa ${attempt}/20"
         break
       fi
     fi
+    log "gateway ainda aquecendo... tentativa ${attempt}/20"
     sleep 3
   done
 
@@ -138,9 +146,23 @@ print('PROJECT_VALIDATION=OK')
 PY
 }
 
+CURRENT_STEP=$((CURRENT_STEP+1))
+step_log "$CURRENT_STEP" "verificando Node.js e npm"
 install_node_if_missing
+
+CURRENT_STEP=$((CURRENT_STEP+1))
+step_log "$CURRENT_STEP" "verificando instalação do OpenClaw"
 install_openclaw_if_missing
+
+CURRENT_STEP=$((CURRENT_STEP+1))
+step_log "$CURRENT_STEP" "gravando configuração mínima segura do projeto"
 write_project_safe_config
+
+CURRENT_STEP=$((CURRENT_STEP+1))
+step_log "$CURRENT_STEP" "subindo e validando o gateway do OpenClaw"
 ensure_gateway_ready
+
+CURRENT_STEP=$((CURRENT_STEP+1))
+step_log "$CURRENT_STEP" "executando validação final do projeto"
 project_validation
 log "concluído com sucesso"
