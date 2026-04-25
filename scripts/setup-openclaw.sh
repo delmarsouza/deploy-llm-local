@@ -88,7 +88,16 @@ ollama.setdefault('models', [])
 
 with open(p,'w') as f:
     json.dump(cfg, f, indent=2)
-print(open(p).read())
+
+summary = {
+    'config_file': p,
+    'gateway_mode': cfg.get('gateway', {}).get('mode'),
+    'gateway_bind': cfg.get('gateway', {}).get('bind'),
+    'gateway_port': cfg.get('gateway', {}).get('port'),
+    'workspace': cfg.get('agents', {}).get('defaults', {}).get('workspace'),
+    'ollama_base_url': cfg.get('models', {}).get('providers', {}).get('ollama', {}).get('baseUrl'),
+}
+print(json.dumps(summary, indent=2))
 PY
 }
 
